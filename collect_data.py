@@ -15,11 +15,29 @@ class DataCollector(BaseModel):
 
     @validator("ticker_symbol")
     def parse_ticker_symbol(cls, value: str) -> str:
+        """
+        Validate that the ticker symbol is a string consisting of 4 uppercase letters.
+
+        Args:
+            value (str): The ticker symbol to validate.
+
+        Raises:
+            ValueError: If the ticker symbol is not a string consisting of 4 uppercase letters.
+
+        Returns:
+            str: The validated ticker symbol.
+        """
         if re.fullmatch("[A-Z]{4}", value):
             return value
         raise ValueError(f"ticker_symbol should consist of 4 uppercase letters, got: {value}")
 
     def _get_prices(self) -> pd.DataFrame:
+        """
+        Retrieve historical stock price data from Yahoo Finance and format it into a Pandas DataFrame.
+
+        Returns:
+            pd.DataFrame: The stock price data, including only the date and OHLCV data.
+        """
         stock = yf.Ticker(self.ticker_symbol)
         prices = stock.history(period="max", interval="1d").reset_index()
         # leave out date and OHLCV
@@ -29,6 +47,15 @@ class DataCollector(BaseModel):
         return prices
 
     def _enrich_indicators(self, features: pd.DataFrame) -> pd.DataFrame:
+        """
+        Calculate technical indicators for the stock price data.
+
+        Args:
+            features (pd.DataFrame): The stock price data.
+
+        Returns:
+            pd.DataFrame: The stock price data with technical indicators appended as additional columns.
+        """
         features["MA"] = MA(features["Close"])
         features["EMA"] = EMA(features["Close"])
         aroon_down, aroon_up = AROON(features["High"], features["Low"])
@@ -38,6 +65,17 @@ class DataCollector(BaseModel):
         return features.dropna()
 
     def _enrich_worldwide_data(self, features: pd.DataFrame, world_series_idx: list[str]) -> pd.DataFrame:
+        """
+        Retrieve worldwide economic data from the Federal Reserve Economic Data (FRED)
+        and append it to the stock price data.
+
+        Args:
+            features (pd.DataFrame): The stock price data.
+            world_series_idx (list[str]): A list of FRED series IDs to retrieve.
+
+        Returns:
+            pd.DataFrame: The stock price data with worldwide economic data appended as additional columns.
+        """
         # connect to database
         fred = Fred(api_key=self.fred_api_key)
         # join and append each series individually
@@ -56,6 +94,13 @@ class DataCollector(BaseModel):
         return features
 
     def collect(self, world_series_idx: list[str], output_dir: str) -> None:
+        """
+        Collect and save stock price data, technical indicators, and worldwide economic data for a given ticker symbol.
+
+        Args:
+            world_series_idx (list[str]): A list of FRED series IDs to retrieve.
+            output_dir (str): The directory in which to save the output CSV file.
+        """
         features = self._get_prices()
         features = self._enrich_indicators(features)
         features = self._enrich_worldwide_data(features, world_series_idx)
