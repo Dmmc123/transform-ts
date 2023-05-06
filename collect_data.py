@@ -104,7 +104,15 @@ class DataCollector(BaseModel):
         features = self._get_prices()
         features = self._enrich_indicators(features)
         features = self._enrich_worldwide_data(features, world_series_idx)
-        features.to_csv(f"{output_dir}/{self.ticker_symbol}.csv", index=False)
+        features = self._postprocess(features)
+        features.to_csv(f"{output_dir}/{self.ticker_symbol}.csv", index=True)
+
+    def _postprocess(self, features: pd.DataFrame) -> pd.DataFrame:
+        # fill in the missing days
+        features.set_index("Date", inplace=True)
+        features = features.resample("D").mean()
+        rolling_avg = features.rolling(30, min_periods=1, center=True).mean()
+        return features.fillna(rolling_avg)
 
 
 def main():
