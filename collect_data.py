@@ -13,23 +13,23 @@ class DataCollector(BaseModel):
     ticker_symbol: str
     fred_api_key: str
 
-    @validator("ticker_symbol")
+    @validator("ticker_symbol", allow_reuse=True)
     def parse_ticker_symbol(cls, value: str) -> str:
         """
-        Validate that the ticker symbol is a string consisting of 4 uppercase letters.
+        Validate that the ticker symbol is a string consisting of 4+ uppercase letters.
 
         Args:
             value (str): The ticker symbol to validate.
 
         Raises:
-            ValueError: If the ticker symbol is not a string consisting of 4 uppercase letters.
+            ValueError: If the ticker symbol is not a string consisting of 4+ uppercase letters.
 
         Returns:
             str: The validated ticker symbol.
         """
-        if re.fullmatch("[A-Z]{4}", value):
+        if re.fullmatch("[A-Z]{4,}", value):
             return value
-        raise ValueError(f"ticker_symbol should consist of 4 uppercase letters, got: {value}")
+        raise ValueError(f"ticker_symbol should consist of 4+ uppercase letters, got: {value}")
 
     def _get_prices(self) -> pd.DataFrame:
         """
