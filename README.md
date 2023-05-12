@@ -32,4 +32,6 @@ Feel free to reach out with any questions or suggestions. Happy forecasting!
 
 ## Metrics
 
+All models were tested against random walk on Tesla's stock prices:
+
 ![image](https://github.com/Dmmc123/transform-ts/assets/54360024/05c2f2f5-80b9-44ca-8347-9ca567b4b131)
